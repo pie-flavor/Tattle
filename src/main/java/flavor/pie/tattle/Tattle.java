@@ -23,6 +23,8 @@ import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.service.pagination.PaginationList;
+import org.spongepowered.api.service.permission.PermissionDescription;
+import org.spongepowered.api.service.permission.PermissionService;
 import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
@@ -35,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Plugin(id="tattle",name="Tattle",authors="pie_flavor",description="A reports plugin.")
@@ -107,8 +110,15 @@ public class Tattle {
                 .child(admin, "admin", "a", "!")
                 .build();
         game.getCommandManager().register(this, tattle, "tattle", "tt");
+        setupPermissions();
     }
-
+    void setupPermissions() {
+        PermissionService service = game.getServiceManager().provideUnchecked(PermissionService.class);
+        Optional<PermissionDescription.Builder> desc_ = service.newDescriptionBuilder(this);
+        if (desc_.isPresent()) {
+            desc_.get().id("tattle.admin.use").assign(PermissionService.SUBJECTS_SYSTEM, true).assign(PermissionService.SUBJECTS_COMMAND_BLOCK, true).assign(PermissionDescription.ROLE_ADMIN, true).assign(PermissionDescription.ROLE_STAFF, true).register();
+        }
+    }
     CommandResult create(CommandSource src, CommandContext args) throws CommandException {
         if (!(src instanceof Player)) {
             throw new CommandException(Text.of("Only players can create complaints!"));
