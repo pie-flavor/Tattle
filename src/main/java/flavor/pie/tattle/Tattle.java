@@ -116,7 +116,7 @@ public class Tattle {
         PermissionService service = game.getServiceManager().provideUnchecked(PermissionService.class);
         Optional<PermissionDescription.Builder> desc_ = service.newDescriptionBuilder(this);
         if (desc_.isPresent()) {
-            desc_.get().id("tattle.admin.use").assign(PermissionService.SUBJECTS_SYSTEM, true).assign(PermissionService.SUBJECTS_COMMAND_BLOCK, true).assign(PermissionDescription.ROLE_ADMIN, true).assign(PermissionDescription.ROLE_STAFF, true).register();
+            desc_.get().id("tattle.admin.use").assign(PermissionService.SUBJECTS_SYSTEM, true).assign(PermissionService.SUBJECTS_COMMAND_BLOCK, true).assign(PermissionDescription.ROLE_ADMIN, true).assign(PermissionDescription.ROLE_STAFF, true).description(Text.of("Permission to access the admin menu")).register();
         }
     }
     CommandResult create(CommandSource src, CommandContext args) throws CommandException {
