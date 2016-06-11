@@ -149,7 +149,10 @@ public class Tattle {
         } catch (ObjectMappingException e) {
             throw new CommandException(Text.of("Error loading complaints!"), e);
         }
-
+        if (list.isEmpty()) {
+            p.sendMessage(Text.of("You have no open complaints!"));
+            return CommandResult.empty();
+        }
         for (Complaint complaint : list) {
             Complaint.BlockLocation loc = complaint.getLocation();
             WorldProperties world = game.getServer().getWorldProperties(loc.getWorldID()).get();
@@ -229,7 +232,10 @@ public class Tattle {
         } catch (ObjectMappingException e) {
             throw new CommandException(Text.of("Error loading complaints!"), e);
         }
-
+        if (list.isEmpty()) {
+            src.sendMessage(Text.of("There are no open complaints!"));
+            return CommandResult.empty();
+        }
         for (Complaint complaint : list) {
             Complaint.BlockLocation loc = complaint.getLocation();
             WorldProperties world = game.getServer().getWorldProperties(loc.getWorldID()).get();
