@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Plugin(id="tattle",name="Tattle",authors="pie_flavor",description="A reports plugin.")
+@Plugin(id="tattle",name="Tattle",authors="pie_flavor",description="A reports plugin.",version="1.0.0")
 public class Tattle {
     @Inject
     Game game;
