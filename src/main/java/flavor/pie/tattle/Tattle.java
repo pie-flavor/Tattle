@@ -70,7 +70,7 @@ public class Tattle {
                     throw new IOException();
             }
             if (!configPath.toFile().exists()) {
-                game.getAssetManager().getAsset(this, "assets/tattle/default.conf").get().copyToFile(configPath);
+                game.getAssetManager().getAsset(this, "default.conf").get().copyToFile(configPath);
             }
             configLoader = HoconConfigurationLoader.builder().setPath(configPath).build();
             storageLoader = HoconConfigurationLoader.builder().setPath(storagePath).build();
