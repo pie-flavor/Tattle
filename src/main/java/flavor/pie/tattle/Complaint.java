@@ -20,6 +20,7 @@ public class Complaint {
         setDescription(description);
         setTimestamp(timestamp);
         setOwner(owner);
+        setComplaintID(UUID.randomUUID());
     }
     @Setting
     private BlockLocation location;
@@ -29,6 +30,8 @@ public class Complaint {
     private String timestamp;
     @Setting
     private UUID owner;
+    @Setting("complaint-id")
+    private UUID complaintID;
 
     public UUID getOwner() {
         return owner;
@@ -66,11 +69,19 @@ public class Complaint {
         return timestamp;
     }
 
+    public UUID getComplaintID() {
+        return complaintID;
+    }
+
+    public void setComplaintID(UUID complaintID) {
+        this.complaintID = complaintID;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (!(other instanceof Complaint)) return false;
         Complaint c = (Complaint) other;
-        return location.equals(c.getLocation()) && description.equals(c.getLocation()) && timestamp.equals(c.getFormattedTimestamp()) && owner.equals(c.getOwner());
+        return complaintID.equals(c.getComplaintID());
     }
     @ConfigSerializable
     public static class BlockLocation {
@@ -134,13 +145,6 @@ public class Complaint {
 
         public Location<World> getLocation() {
             return Sponge.getGame().getServer().getWorld(worldID).get().getLocation(getPosition());
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof BlockLocation)) return false;
-            BlockLocation loc = (BlockLocation) other;
-            return x == loc.getX() && y == loc.getY() && z == loc.getZ() && worldID.equals(loc.getWorldID());
         }
         @Override
         public String toString() {

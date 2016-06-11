@@ -66,8 +66,7 @@ public class Tattle {
             configPath = dir.resolve("config.conf");
             storagePath = dir.resolve("storage.conf");
             if (!storagePath.toFile().exists()) {
-                if (!storagePath.toFile().createNewFile())
-                    throw new IOException();
+                game.getAssetManager().getAsset(this, "storage.conf").get().copyToFile(storagePath);
             }
             if (!configPath.toFile().exists()) {
                 game.getAssetManager().getAsset(this, "default.conf").get().copyToFile(configPath);
@@ -155,10 +154,9 @@ public class Tattle {
             Complaint.BlockLocation loc = complaint.getLocation();
             WorldProperties world = game.getServer().getWorldProperties(loc.getWorldID()).get();
             Text text = Text.of(
-                    "["+complaint.getFormattedTimestamp()+"]",
-                    " at ", +loc.getX()+", "+loc.getY()+", "+loc.getZ()+" ~ "+world.getWorldName()+"]", " ",
-                    Text.builder("[View]").color(TextColors.GREEN).onClick(TextActions.executeCallback(s -> showComplaint(complaint, s))), " ",
-                    Text.builder("[Delete]").color(TextColors.RED).onClick(TextActions.executeCallback(s -> deleteComplaint(complaint, s)))
+                    "["+complaint.getFormattedTimestamp()+"]", " ",
+                    Text.builder("[View]").color(TextColors.GREEN).onHover(TextActions.showText(Text.of("Click me!"))).onClick(TextActions.executeCallback(s -> showComplaint(complaint, s))), " ",
+                    Text.builder("[Delete]").color(TextColors.RED).onHover(TextActions.showText(Text.of("Click me!"))).onClick(TextActions.executeCallback(s -> deleteComplaint(complaint, s)))
             );
             texts.add(text);
         }
@@ -236,11 +234,10 @@ public class Tattle {
             Complaint.BlockLocation loc = complaint.getLocation();
             WorldProperties world = game.getServer().getWorldProperties(loc.getWorldID()).get();
             Text text = Text.of(
-                    "["+complaint.getFormattedTimestamp()+"]",
-                    " at ", +loc.getX()+", "+loc.getY()+", "+loc.getZ()+" ~ "+world.getWorldName()+"]", " ",
-                    Text.builder("[View]").color(TextColors.GREEN).onClick(TextActions.executeCallback(s -> showComplaint(complaint, s))), " ",
-                    Text.builder("[Teleport]").color(TextColors.BLUE).onClick(TextActions.executeCallback(s -> teleport(complaint, s))), " ",
-                    Text.builder("[Delete]").color(TextColors.RED).onClick(TextActions.executeCallback(s -> deleteComplaintAdmin(complaint, s)))
+                    "["+complaint.getFormattedTimestamp()+"]", " ",
+                    Text.builder("[View]").color(TextColors.GREEN).onHover(TextActions.showText(Text.of("Click me!"))).onClick(TextActions.executeCallback(s -> showComplaint(complaint, s))), " ",
+                    Text.builder("[Teleport]").color(TextColors.BLUE).onHover(TextActions.showText(Text.of("Click me!"))).onClick(TextActions.executeCallback(s -> teleport(complaint, s))), " ",
+                    Text.builder("[Delete]").color(TextColors.RED).onHover(TextActions.showText(Text.of("Click me!"))).onClick(TextActions.executeCallback(s -> deleteComplaintAdmin(complaint, s)))
             );
             texts.add(text);
         }
