@@ -1,5 +1,6 @@
 package flavor.pie.tattle;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
@@ -18,6 +19,7 @@ import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.plugin.Plugin;
@@ -34,9 +36,11 @@ import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.storage.WorldProperties;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -60,9 +64,8 @@ public class Tattle {
     @Listener
     public void preInit(GamePreInitializationEvent e) throws IOException {
         try {
-            if (!dir.toFile().exists())
-                if (!dir.toFile().mkdir())
-                    throw new IOException();
+            if (Files.exists(dir))
+                Files.createDirectory(dir);
             configPath = dir.resolve("config.conf");
             storagePath = dir.resolve("storage.conf");
             if (!storagePath.toFile().exists()) {
@@ -75,6 +78,10 @@ public class Tattle {
             storageLoader = HoconConfigurationLoader.builder().setPath(storagePath).build();
             config = configLoader.load();
             storage = storageLoader.load();
+            if (config.getNode("version").getInt() == 0) {
+                game.getAssetManager().getAsset(this, "default.conf").get().copyToFile(configPath);
+                config = configLoader.load();
+            }
         } catch (IOException ex) {
             disable();
             logger.error("Could not load config! Disabling.");
@@ -111,6 +118,11 @@ public class Tattle {
         game.getCommandManager().register(this, tattle, "tattle", "tt");
         setupPermissions();
     }
+    @Listener
+    public void reload(GameReloadEvent e) throws IOException {
+        config = configLoader.load();
+        storage = storageLoader.load();
+    }
     void setupPermissions() {
         PermissionService service = game.getServiceManager().provideUnchecked(PermissionService.class);
         Optional<PermissionDescription.Builder> desc_ = service.newDescriptionBuilder(this);
@@ -120,7 +132,7 @@ public class Tattle {
     }
     CommandResult create(CommandSource src, CommandContext args) throws CommandException {
         if (!(src instanceof Player)) {
-            throw new CommandException(Text.of("Only players can create complaints!"));
+            throw new CommandException(Text.of(getLang("new.not-player")));
         }
         Player p = (Player) src;
         String explanation = args.<String>getOne("explanation").get();
@@ -132,14 +144,14 @@ public class Tattle {
             storage.getNode("complaints").getAppendedNode().setValue(TypeToken.of(Complaint.class), complaint);
             storageLoader.save(storage);
         } catch (ObjectMappingException | IOException e) {
-            throw new CommandException(Text.of("Could not create complaint!"), e);
+            throw new CommandException(Text.of(getLang("new.fail-create")), e);
         }
-        p.sendMessage(Text.of("Submitted a new complaint."));
+        p.sendMessage(Text.of(getLang("new.success-create")));
         return CommandResult.success();
     }
     CommandResult list(CommandSource src, CommandContext args) throws CommandException {
         if (!(src instanceof Player)) {
-            throw new CommandException(Text.of("Only players can see their complaints!"));
+            throw new CommandException(Text.of(getLang("list.not-player")));
         }
         Player p = (Player) src;
         List<Text> texts = Lists.newArrayList();
@@ -147,10 +159,10 @@ public class Tattle {
         try {
             list = storage.getNode("complaints").getList(TypeToken.of(Complaint.class)).stream().filter(c -> c.getOwner().equals(p.getUniqueId())).collect(Collectors.toCollection(Lists::newArrayList));
         } catch (ObjectMappingException e) {
-            throw new CommandException(Text.of("Error loading complaints!"), e);
+            throw new CommandException(Text.of(getLang("list.error-load")), e);
         }
         if (list.isEmpty()) {
-            p.sendMessage(Text.of("You have no open complaints!"));
+            p.sendMessage(Text.of(getLang("list.empty-list")));
             return CommandResult.empty();
         }
         for (Complaint complaint : list) {
@@ -158,27 +170,27 @@ public class Tattle {
             WorldProperties world = game.getServer().getWorldProperties(loc.getWorldID()).get();
             Text text = Text.of(
                     "["+complaint.getFormattedTimestamp()+"]", " ",
-                    Text.builder("[View]").color(TextColors.GREEN).onHover(TextActions.showText(Text.of("Click me!"))).onClick(TextActions.executeCallback(s -> showComplaint(complaint, s))), " ",
-                    Text.builder("[Delete]").color(TextColors.RED).onHover(TextActions.showText(Text.of("Click me!"))).onClick(TextActions.executeCallback(s -> deleteComplaint(complaint, s)))
+                    Text.builder(btn("view")).color(TextColors.GREEN).onHover(TextActions.showText(Text.of(clickMe()))).onClick(TextActions.executeCallback(s -> showComplaint(complaint, s))), " ",
+                    Text.builder(btn("delete")).color(TextColors.RED).onHover(TextActions.showText(Text.of(clickMe()))).onClick(TextActions.executeCallback(s -> deleteComplaint(complaint, s)))
             );
             texts.add(text);
         }
         PaginationList.builder()
                 .contents(texts)
-                .header(Text.of("Complaints submitted by ", p.getName()))
-                .title(Text.of("Complaints"))
+                .header(Text.of(getWithArgs("list.header", ImmutableMap.of("player", p.getName()))))
+                .title(Text.of(getLang("list.title")))
                 .build()
                 .sendTo(p);
         return CommandResult.builder().successCount(list.size()).build();
     }
     void showComplaint(Complaint complaint, CommandSource src) {
         src.sendMessages(
-                Text.of("Complaint submitted by "+
-                        game.getServiceManager().provideUnchecked(UserStorageService.class).get(complaint.getOwner()).get().getName()
-                        +" at "+complaint.getFormattedTimestamp()
-                        +" at "+complaint.getLocation()
-                        +" in "+game.getServer().getWorldProperties(complaint.getLocation().getWorldID()).get().getWorldName()
-                        +": "),
+                Text.of(getWithArgs("buttons.btnView.header", ImmutableMap.of(
+                        "player", game.getServiceManager().provideUnchecked(UserStorageService.class).get(complaint.getOwner()).get().getName(),
+                        "timestamp", complaint.getFormattedTimestamp(),
+                        "location", complaint.getLocation().toString(),
+                        "world", game.getServer().getWorldProperties(complaint.getLocation().getWorldID()).get().getWorldName()
+                        ))),
                 Text.of(complaint.getDescription())
         );
     }
@@ -187,13 +199,13 @@ public class Tattle {
         try {
             List<Complaint> list = storage.getNode("complaints").getList(TypeToken.of(Complaint.class)).stream().filter(c -> c.getOwner().equals(p.getUniqueId())).collect(Collectors.toCollection(Lists::newArrayList));
             if (!list.contains(complaint)) {
-                src.sendMessage(Text.of("This complaint does not exist!"));
+                src.sendMessage(Text.of(getLang("buttons.btnDelete.not-exist")));
                 return;
             } else {
                 list.remove(complaint);
                 storage.getNode("complaints").setValue(new TypeToken<List<Complaint>>(){}, list);
                 storageLoader.save(storage);
-                p.sendMessage(Text.of("Deleted the complaint."));
+                p.sendMessage(Text.of(getLang("buttons.btnDelete.success")));
             }
         } catch (ObjectMappingException | IOException e) {
             throw new RuntimeException(e);
@@ -203,13 +215,13 @@ public class Tattle {
         try {
             List<Complaint> list = Lists.newArrayList(storage.getNode("complaints").getList(TypeToken.of(Complaint.class)));
             if (!list.contains(complaint)) {
-                src.sendMessage(Text.of("This complaint does not exist!"));
+                src.sendMessage(Text.of(getLang("buttons.btnDelete.success")));
                 return;
             } else {
                 list.remove(complaint);
                 storage.getNode("complaints").setValue(new TypeToken<List<Complaint>>(){}, list);
                 storageLoader.save(storage);
-                src.sendMessage(Text.of("Deleted the complaint."));
+                src.sendMessage(Text.of(getLang("buttons.btnDelete.success")));
             }
         } catch (ObjectMappingException | IOException e) {
             throw new RuntimeException(e);
@@ -217,7 +229,7 @@ public class Tattle {
     }
     void teleport(Complaint complaint, CommandSource src) {
         if (!(src instanceof Player)) {
-            src.sendMessage(Text.of("Sorry, you can't teleport."));
+            src.sendMessage(Text.of(getLang("buttons.btnTeleport.not-allowed")));
             return;
         } else {
             Player p = (Player) src;
@@ -230,10 +242,10 @@ public class Tattle {
         try {
             list = Lists.newArrayList(storage.getNode("complaints").getList(TypeToken.of(Complaint.class)));
         } catch (ObjectMappingException e) {
-            throw new CommandException(Text.of("Error loading complaints!"), e);
+            throw new CommandException(Text.of(getLang("admin.error-load")), e);
         }
         if (list.isEmpty()) {
-            src.sendMessage(Text.of("There are no open complaints!"));
+            src.sendMessage(Text.of(getLang("admin.empty-list")));
             return CommandResult.empty();
         }
         for (Complaint complaint : list) {
@@ -241,17 +253,33 @@ public class Tattle {
             WorldProperties world = game.getServer().getWorldProperties(loc.getWorldID()).get();
             Text text = Text.of(
                     "["+complaint.getFormattedTimestamp()+"]", " ",
-                    Text.builder("[View]").color(TextColors.GREEN).onHover(TextActions.showText(Text.of("Click me!"))).onClick(TextActions.executeCallback(s -> showComplaint(complaint, s))), " ",
-                    Text.builder("[Teleport]").color(TextColors.BLUE).onHover(TextActions.showText(Text.of("Click me!"))).onClick(TextActions.executeCallback(s -> teleport(complaint, s))), " ",
-                    Text.builder("[Delete]").color(TextColors.RED).onHover(TextActions.showText(Text.of("Click me!"))).onClick(TextActions.executeCallback(s -> deleteComplaintAdmin(complaint, s)))
+                    Text.builder(btn("view")).color(TextColors.GREEN).onHover(TextActions.showText(Text.of(clickMe()))).onClick(TextActions.executeCallback(s -> showComplaint(complaint, s))), " ",
+                    Text.builder(btn("teleport")).color(TextColors.BLUE).onHover(TextActions.showText(Text.of(clickMe()))).onClick(TextActions.executeCallback(s -> teleport(complaint, s))), " ",
+                    Text.builder(btn("delete")).color(TextColors.RED).onHover(TextActions.showText(Text.of(clickMe()))).onClick(TextActions.executeCallback(s -> deleteComplaintAdmin(complaint, s)))
             );
             texts.add(text);
         }
         PaginationList.builder()
                 .contents(texts)
-                .title(Text.of("Complaints"))
+                .title(Text.of(getLang("admin.header")))
                 .build()
                 .sendTo(src);
         return CommandResult.builder().successCount(list.size()).build();
+    }
+    String getLang(String path) {
+        return config.getNode("lang").getNode((Object[]) path.split("\\.")).getString();
+    }
+    String btn(String button) {
+        return "["+config.getNode("lang", "buttons", button).getString()+"]";
+    }
+    String clickMe() {
+        return config.getNode("lang", "buttons", "click-me").getString();
+    }
+    String getWithArgs(String path, Map<String, String> repl) {
+        String lang = getLang(path);
+        for (Map.Entry<String, String> entry : repl.entrySet()) {
+            lang = lang.replace("<"+entry.getKey()+">", entry.getValue());
+        }
+        return lang;
     }
 }
