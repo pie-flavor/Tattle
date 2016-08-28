@@ -64,14 +64,13 @@ public class Tattle {
     @Listener
     public void preInit(GamePreInitializationEvent e) throws IOException {
         try {
-            if (Files.exists(dir))
-                Files.createDirectory(dir);
+            Files.createDirectories(dir);
             configPath = dir.resolve("config.conf");
             storagePath = dir.resolve("storage.conf");
-            if (!storagePath.toFile().exists()) {
+            if (!Files.exists(storagePath)) {
                 game.getAssetManager().getAsset(this, "storage.conf").get().copyToFile(storagePath);
             }
-            if (!configPath.toFile().exists()) {
+            if (!Files.exists(configPath)) {
                 game.getAssetManager().getAsset(this, "default.conf").get().copyToFile(configPath);
             }
             configLoader = HoconConfigurationLoader.builder().setPath(configPath).build();
