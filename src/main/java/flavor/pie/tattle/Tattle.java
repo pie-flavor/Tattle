@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Plugin(id="tattle",name="Tattle",authors="pie_flavor",description="A reports plugin.",version="1.1.0")
+@Plugin(id="tattle",name="Tattle",authors="pie_flavor",description="A reports plugin.",version="1.1.1")
 public class Tattle {
     @Inject
     Game game;
