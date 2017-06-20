@@ -7,7 +7,7 @@ group 'flavor.pie'
 version '1.1.1'
 
 dependencies {
-    compile 'org.spongepowered:spongeapi:4.1.0'
+    compile 'org.spongepowered:spongeapi:6.0.0'
 }
 
 spongestart {
