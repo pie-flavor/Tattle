@@ -1,16 +1,37 @@
 plugins {
-    id 'org.spongepowered.plugin' version '0.6'
-    id 'com.qixalite.spongestart' version '1.5.2'
+    id 'java'
+    id 'flavor.pie.promptsign' version '1.0.2'
+    id 'com.github.johnrengelman.shadow' version '1.2.4'
 }
 
 group 'flavor.pie'
-version '1.1.1'
+version '1.1.1-SNAPSHOT'
 
-dependencies {
-    compile 'org.spongepowered:spongeapi:6.0.0'
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://repo.spongepowered.org/maven/'
+    }
+    maven {
+        url 'https://repo.bstats.org/content/repositories/releases'
+    }
 }
 
-spongestart {
-    eula true
-    spongeVanillaBuild '1.10.2-5.0.0-BETA-112'
+configurations {
+    compile.extendsFrom shadow
+}
+
+dependencies {
+    compile 'org.spongepowered:spongeapi:7.0.0'
+    shadow 'org.bstats:bstats-sponge-lite:1.2'
+}
+
+jar.enabled = false
+build.dependsOn shadowJar
+signArchives.dependsOn shadowJar
+
+shadowJar {
+    classifier = null
+    configurations = [project.configurations.shadow]
+    relocate 'org.bstats', 'flavor.pie.tattle.metrics'
 }

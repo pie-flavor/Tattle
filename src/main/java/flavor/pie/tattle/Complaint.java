@@ -1,6 +1,7 @@
 package flavor.pie.tattle;
 
 import com.flowpowered.math.vector.Vector3i;
+import com.google.common.reflect.TypeToken;
 import ninja.leaping.configurate.objectmapping.Setting;
 import ninja.leaping.configurate.objectmapping.serialize.ConfigSerializable;
 import org.spongepowered.api.Sponge;
@@ -14,6 +15,8 @@ import java.util.UUID;
 
 @ConfigSerializable
 public class Complaint {
+    public final static TypeToken<Complaint> type = TypeToken.of(Complaint.class);
+
     public Complaint() {}
     public Complaint(BlockLocation location, String description, LocalDateTime timestamp, UUID owner) {
         setLocation(location);
@@ -21,6 +24,10 @@ public class Complaint {
         setTimestamp(timestamp);
         setOwner(owner);
         setComplaintID(UUID.randomUUID());
+    }
+
+    public Complaint(Location<World> location, String description, LocalDateTime timestamp, UUID owner) {
+        this(new BlockLocation(location), description, timestamp, owner);
     }
     @Setting
     private BlockLocation location;
