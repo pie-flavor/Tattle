@@ -317,11 +317,14 @@ public class Tattle {
     }
 
     private void load() throws IOException, ObjectMappingException {
+        complaints = new ArrayList<>();
+        if (!Files.exists(storagePath)) {
+            return;
+        }
         DataContainer container;
         try (InputStream is = Files.newInputStream(storagePath)) {
             container = DataFormats.NBT.readFrom(is);
         }
-        complaints = new ArrayList<>();
         for (DataView view : container.getViewList(DataQuery.of("complaints")).get()) {
             complaints.add(DataTranslators.CONFIGURATION_NODE.translate(view).getValue(Complaint.type));
         }
