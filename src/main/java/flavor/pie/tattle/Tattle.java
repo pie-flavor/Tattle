@@ -9,7 +9,7 @@ import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
-import org.bstats.sponge.MetricsLite;
+import org.bstats.sponge.MetricsLite2;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.command.CommandException;
@@ -70,7 +70,7 @@ public class Tattle {
     @Inject
     Logger logger;
     @Inject @SuppressWarnings("unused")
-    MetricsLite metrics;
+    MetricsLite2 metrics;
 
     Path storagePath;
     Config config;
