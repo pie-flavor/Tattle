@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'flavor.pie.promptsign' version '1.0.2'
+    id 'flavor.pie.promptsign' version '1.1.0'
     id 'com.github.johnrengelman.shadow' version '1.2.4'
 }
 
